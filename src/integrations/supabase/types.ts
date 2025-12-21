@@ -14,6 +14,81 @@ export type Database = {
   }
   public: {
     Tables: {
+      agents: {
+        Row: {
+          avatar_color: string
+          created_at: string
+          email: string
+          id: string
+          last_seen: string
+          name: string
+          status: string
+        }
+        Insert: {
+          avatar_color?: string
+          created_at?: string
+          email: string
+          id?: string
+          last_seen?: string
+          name: string
+          status?: string
+        }
+        Update: {
+          avatar_color?: string
+          created_at?: string
+          email?: string
+          id?: string
+          last_seen?: string
+          name?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      case_collaborators: {
+        Row: {
+          agent_id: string
+          case_id: string
+          created_at: string
+          cursor_position: Json | null
+          id: string
+          is_active: boolean
+          last_activity: string
+        }
+        Insert: {
+          agent_id: string
+          case_id: string
+          created_at?: string
+          cursor_position?: Json | null
+          id?: string
+          is_active?: boolean
+          last_activity?: string
+        }
+        Update: {
+          agent_id?: string
+          case_id?: string
+          created_at?: string
+          cursor_position?: Json | null
+          id?: string
+          is_active?: boolean
+          last_activity?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_collaborators_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_collaborators_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       case_history: {
         Row: {
           action: string

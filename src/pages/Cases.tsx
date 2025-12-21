@@ -4,6 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CollaboratorPresence } from "@/components/CollaboratorPresence";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   Plus, 
@@ -15,11 +20,12 @@ import {
   Calendar,
   DollarSign,
   MapPin,
-  User,
   AlertCircle,
   CheckCircle,
   Clock,
-  XCircle
+  XCircle,
+  Users,
+  Trash2
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -42,9 +48,37 @@ export default function Cases() {
   const [cases, setCases] = useState<Case[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [selectedCase, setSelectedCase] = useState<Case | null>(null);
+  const [formData, setFormData] = useState({
+    customer_name: "",
+    policy_number: "",
+    claim_type: "Flood",
+    state: "Florida",
+    claim_amount: "",
+    date_of_incident: "",
+    description: "",
+    priority: "medium",
+  });
 
   useEffect(() => {
     fetchCases();
+
+    // Subscribe to realtime updates
+    const channel = supabase
+      .channel("cases-changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "cases" },
+        () => {
+          fetchCases();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchCases = async () => {
@@ -61,6 +95,50 @@ export default function Cases() {
       toast.error('Failed to load cases');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleCreateCase = async () => {
+    try {
+      const { error } = await supabase.from("cases").insert({
+        customer_name: formData.customer_name,
+        policy_number: formData.policy_number,
+        claim_type: formData.claim_type,
+        state: formData.state,
+        claim_amount: parseFloat(formData.claim_amount),
+        date_of_incident: formData.date_of_incident,
+        description: formData.description,
+        priority: formData.priority,
+      });
+
+      if (error) throw error;
+
+      toast.success("Case created successfully!");
+      setIsCreateOpen(false);
+      setFormData({
+        customer_name: "",
+        policy_number: "",
+        claim_type: "Flood",
+        state: "Florida",
+        claim_amount: "",
+        date_of_incident: "",
+        description: "",
+        priority: "medium",
+      });
+    } catch (error) {
+      console.error("Error creating case:", error);
+      toast.error("Failed to create case");
+    }
+  };
+
+  const handleDeleteCase = async (id: string) => {
+    try {
+      const { error } = await supabase.from("cases").delete().eq("id", id);
+      if (error) throw error;
+      toast.success("Case deleted successfully!");
+    } catch (error) {
+      console.error("Error deleting case:", error);
+      toast.error("Failed to delete case");
     }
   };
 
@@ -113,17 +191,121 @@ export default function Cases() {
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="space-y-6 animate-fade-in">
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold">Active Cases</h1>
-            <p className="text-muted-foreground">Manage and track all insurance claims</p>
+            <p className="text-muted-foreground">Manage and track all insurance claims with real-time collaboration</p>
           </div>
-          <Button variant="gradient" className="gap-2">
-            <Plus className="h-4 w-4" />
-            New Case
-          </Button>
+          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+            <DialogTrigger asChild>
+              <Button variant="gradient" className="gap-2">
+                <Plus className="h-4 w-4" />
+                New Case
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Create New Case</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 mt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Customer Name</Label>
+                    <Input
+                      value={formData.customer_name}
+                      onChange={(e) => setFormData({ ...formData, customer_name: e.target.value })}
+                      placeholder="John Doe"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Policy Number</Label>
+                    <Input
+                      value={formData.policy_number}
+                      onChange={(e) => setFormData({ ...formData, policy_number: e.target.value })}
+                      placeholder="FL-2024-XXXXX"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Claim Type</Label>
+                    <Select value={formData.claim_type} onValueChange={(v) => setFormData({ ...formData, claim_type: v })}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Flood">Flood</SelectItem>
+                        <SelectItem value="Fire">Fire</SelectItem>
+                        <SelectItem value="Theft">Theft</SelectItem>
+                        <SelectItem value="Auto">Auto</SelectItem>
+                        <SelectItem value="Medical">Medical</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>State</Label>
+                    <Select value={formData.state} onValueChange={(v) => setFormData({ ...formData, state: v })}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Florida">Florida</SelectItem>
+                        <SelectItem value="Texas">Texas</SelectItem>
+                        <SelectItem value="California">California</SelectItem>
+                        <SelectItem value="New York">New York</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Claim Amount ($)</Label>
+                    <Input
+                      type="number"
+                      value={formData.claim_amount}
+                      onChange={(e) => setFormData({ ...formData, claim_amount: e.target.value })}
+                      placeholder="50000"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Date of Incident</Label>
+                    <Input
+                      type="date"
+                      value={formData.date_of_incident}
+                      onChange={(e) => setFormData({ ...formData, date_of_incident: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Priority</Label>
+                  <Select value={formData.priority} onValueChange={(v) => setFormData({ ...formData, priority: v })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Description</Label>
+                  <Textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="Describe the incident..."
+                    rows={3}
+                  />
+                </div>
+                <Button variant="gradient" className="w-full" onClick={handleCreateCase}>
+                  Create Case
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
 
         {/* Search and Filter */}
@@ -160,20 +342,23 @@ export default function Cases() {
               <Card 
                 key={caseItem.id} 
                 variant="elevated" 
-                className="hover:shadow-glow transition-all cursor-pointer animate-slide-up"
+                className="hover:shadow-glow transition-all cursor-pointer animate-fade-in group"
                 style={{ animationDelay: `${index * 50}ms` }}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="space-y-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         {getClaimTypeBadge(caseItem.claim_type)}
                         {getPriorityBadge(caseItem.priority)}
                       </div>
                       <CardTitle className="text-base">{caseItem.customer_name}</CardTitle>
                       <p className="text-xs text-muted-foreground font-mono">{caseItem.policy_number}</p>
                     </div>
-                    {getStatusBadge(caseItem.status)}
+                    <div className="flex flex-col items-end gap-2">
+                      {getStatusBadge(caseItem.status)}
+                      <CollaboratorPresence caseId={caseItem.id} />
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="pt-0 space-y-4">
@@ -203,8 +388,13 @@ export default function Cases() {
                       <Edit className="h-3 w-3" />
                       Edit
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <MoreHorizontal className="h-4 w-4" />
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => handleDeleteCase(caseItem.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </CardContent>
@@ -217,7 +407,11 @@ export default function Cases() {
           <Card variant="glass" className="p-12 text-center">
             <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-medium mb-2">No cases found</h3>
-            <p className="text-muted-foreground">Try adjusting your search or create a new case</p>
+            <p className="text-muted-foreground mb-4">Try adjusting your search or create a new case</p>
+            <Button variant="gradient" onClick={() => setIsCreateOpen(true)} className="gap-2">
+              <Plus className="h-4 w-4" />
+              Create First Case
+            </Button>
           </Card>
         )}
       </div>
