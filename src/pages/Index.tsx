@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
-import { Header } from "@/components/Header";
-import { Sidebar } from "@/components/Sidebar";
+import { Layout } from "@/components/Layout";
 import { MetricsBar } from "@/components/MetricsBar";
 import { CaseContextPanel } from "@/components/CaseContextPanel";
 import { KnowledgeSuggestions } from "@/components/KnowledgeSuggestions";
@@ -8,7 +7,6 @@ import { DocumentViewer } from "@/components/DocumentViewer";
 import { AskQuestion } from "@/components/AskQuestion";
 import { getKnowledgeSuggestions, CaseContext, KnowledgeResult } from "@/lib/gemini";
 
-// Sample case data
 const sampleCase: CaseContext = {
   claimType: "Flood",
   state: "Florida",
@@ -37,73 +35,67 @@ export default function Index() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <div className="flex">
-        <Sidebar />
-        <main className="flex-1 p-6 overflow-auto h-[calc(100vh-64px)] scrollbar-thin">
-          <MetricsBar />
-          
-          {/* Desktop Layout */}
-          <div className="hidden lg:grid grid-cols-12 gap-6">
-            <div className="col-span-3 space-y-6">
-              <CaseContextPanel caseData={sampleCase} />
-              <AskQuestion caseContext={sampleCase} />
-            </div>
-            <div className="col-span-4">
-              <KnowledgeSuggestions
-                suggestions={suggestions}
-                isLoading={isLoading}
-                onSelectArticle={setSelectedArticle}
-              />
-            </div>
-            <div className="col-span-5">
-              <DocumentViewer
-                article={selectedArticle}
-                onClose={() => setSelectedArticle(null)}
-              />
-            </div>
-          </div>
-
-          {/* Tablet Layout */}
-          <div className="hidden md:grid lg:hidden grid-cols-2 gap-6">
-            <div className="space-y-6">
-              <CaseContextPanel caseData={sampleCase} />
-              <AskQuestion caseContext={sampleCase} />
-            </div>
-            <div className="space-y-6">
-              <KnowledgeSuggestions
-                suggestions={suggestions}
-                isLoading={isLoading}
-                onSelectArticle={setSelectedArticle}
-              />
-              {selectedArticle && (
-                <DocumentViewer
-                  article={selectedArticle}
-                  onClose={() => setSelectedArticle(null)}
-                />
-              )}
-            </div>
-          </div>
-
-          {/* Mobile Layout */}
-          <div className="md:hidden space-y-6">
-            <CaseContextPanel caseData={sampleCase} />
-            <KnowledgeSuggestions
-              suggestions={suggestions}
-              isLoading={isLoading}
-              onSelectArticle={setSelectedArticle}
-            />
-            {selectedArticle && (
-              <DocumentViewer
-                article={selectedArticle}
-                onClose={() => setSelectedArticle(null)}
-              />
-            )}
-            <AskQuestion caseContext={sampleCase} />
-          </div>
-        </main>
+    <Layout>
+      <MetricsBar />
+      
+      {/* Desktop Layout */}
+      <div className="hidden xl:grid grid-cols-12 gap-6">
+        <div className="col-span-3 space-y-6">
+          <CaseContextPanel caseData={sampleCase} />
+          <AskQuestion caseContext={sampleCase} />
+        </div>
+        <div className="col-span-4">
+          <KnowledgeSuggestions
+            suggestions={suggestions}
+            isLoading={isLoading}
+            onSelectArticle={setSelectedArticle}
+          />
+        </div>
+        <div className="col-span-5">
+          <DocumentViewer
+            article={selectedArticle}
+            onClose={() => setSelectedArticle(null)}
+          />
+        </div>
       </div>
-    </div>
+
+      {/* Tablet Layout */}
+      <div className="hidden md:grid xl:hidden grid-cols-2 gap-6">
+        <div className="space-y-6">
+          <CaseContextPanel caseData={sampleCase} />
+          <AskQuestion caseContext={sampleCase} />
+        </div>
+        <div className="space-y-6">
+          <KnowledgeSuggestions
+            suggestions={suggestions}
+            isLoading={isLoading}
+            onSelectArticle={setSelectedArticle}
+          />
+          {selectedArticle && (
+            <DocumentViewer
+              article={selectedArticle}
+              onClose={() => setSelectedArticle(null)}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Mobile Layout */}
+      <div className="md:hidden space-y-4">
+        <CaseContextPanel caseData={sampleCase} />
+        <KnowledgeSuggestions
+          suggestions={suggestions}
+          isLoading={isLoading}
+          onSelectArticle={setSelectedArticle}
+        />
+        {selectedArticle && (
+          <DocumentViewer
+            article={selectedArticle}
+            onClose={() => setSelectedArticle(null)}
+          />
+        )}
+        <AskQuestion caseContext={sampleCase} />
+      </div>
+    </Layout>
   );
 }

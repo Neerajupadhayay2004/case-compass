@@ -39,7 +39,7 @@ const metrics = [
 
 export function MetricsBar() {
   return (
-    <div className="grid grid-cols-4 gap-4 mb-6">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       {metrics.map((metric, index) => (
         <Card 
           key={metric.label} 
@@ -50,7 +50,7 @@ export function MetricsBar() {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs text-muted-foreground mb-1">{metric.label}</p>
-              <p className="text-2xl font-semibold">{metric.value}</p>
+              <p className="text-xl lg:text-2xl font-semibold">{metric.value}</p>
             </div>
             <div className={`p-2 rounded-lg ${metric.positive ? 'bg-success/10' : 'bg-destructive/10'}`}>
               <metric.icon className={`h-4 w-4 ${metric.positive ? 'text-success' : 'text-destructive'}`} />
