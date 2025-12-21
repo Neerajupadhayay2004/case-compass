@@ -9,6 +9,7 @@ import Documents from "./pages/Documents";
 import KnowledgeBase from "./pages/KnowledgeBase";
 import History from "./pages/History";
 import Settings from "./pages/Settings";
+import Chat from "./pages/Chat";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -21,6 +22,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/chat" element={<Chat />} />
           <Route path="/cases" element={<Cases />} />
           <Route path="/documents" element={<Documents />} />
           <Route path="/knowledge" element={<KnowledgeBase />} />
