@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { askQuestion } from "@/lib/gemini";
 import { useToast } from "@/hooks/use-toast";
 import {
   MessageSquare,
@@ -18,7 +17,6 @@ import {
   User,
   Sparkles,
   Clock,
-  ChevronRight,
   Lightbulb,
 } from "lucide-react";
 import { format } from "date-fns";
@@ -42,6 +40,8 @@ const suggestedQuestions = [
   "How to process a denied claim?",
   "What documents are required for claims?",
   "Explain state-specific regulations",
+  "What is the claims settlement process?",
+  "How do I handle a hurricane damage claim?",
 ];
 
 export default function Chat() {
@@ -142,7 +142,6 @@ export default function Chat() {
     if (!text.trim() || isLoading) return;
 
     if (!activeConversation) {
-      // Create a new conversation first
       const { data: newConv, error: convError } = await supabase
         .from("chat_conversations")
         .insert({ title: text.slice(0, 50) })
@@ -156,19 +155,17 @@ export default function Chat() {
 
       setConversations([newConv, ...conversations]);
       setActiveConversation(newConv.id);
-
-      // Continue with the new conversation ID
-      await processMessage(text, newConv.id);
+      await processMessage(text, newConv.id, []);
     } else {
-      await processMessage(text, activeConversation);
+      await processMessage(text, activeConversation, messages);
     }
   };
 
-  const processMessage = async (text: string, conversationId: string) => {
+  const processMessage = async (text: string, conversationId: string, previousMessages: Message[]) => {
     setInput("");
     setIsLoading(true);
 
-    // Add user message
+    // Add user message to UI
     const userMessage: Message = {
       id: crypto.randomUUID(),
       role: "user",
@@ -185,22 +182,37 @@ export default function Chat() {
     });
 
     try {
-      // Get AI response
-      const response = await askQuestion(text, {
-        claimType: "General",
-        state: "N/A",
-        claimAmount: "N/A",
-        customerName: "Agent",
-        policyNumber: "N/A",
-        dateOfIncident: "N/A",
-        description: "General AI inquiry",
+      // Build conversation history for context
+      const conversationHistory = [
+        ...previousMessages.map((m) => ({ role: m.role, content: m.content })),
+        { role: "user", content: text },
+      ];
+
+      // Call our edge function
+      const { data, error } = await supabase.functions.invoke("chat", {
+        body: {
+          messages: conversationHistory,
+          caseContext: {
+            claimType: "General",
+            state: "N/A",
+            claimAmount: "N/A",
+            customerName: "Agent",
+            policyNumber: "N/A",
+            dateOfIncident: "N/A",
+            description: "General AI inquiry",
+          },
+        },
       });
 
-      // Add assistant message
+      if (error) throw error;
+
+      const responseContent = data?.response || "I apologize, but I couldn't process that request. Please try again.";
+
+      // Add assistant message to UI
       const assistantMessage: Message = {
         id: crypto.randomUUID(),
         role: "assistant",
-        content: response,
+        content: responseContent,
         created_at: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, assistantMessage]);
@@ -209,22 +221,31 @@ export default function Chat() {
       await supabase.from("chat_messages").insert({
         conversation_id: conversationId,
         role: "assistant",
-        content: response,
+        content: responseContent,
       });
 
       // Update conversation title if it's the first message
-      if (messages.length === 0) {
+      if (previousMessages.length === 0) {
         await supabase
           .from("chat_conversations")
-          .update({ title: text.slice(0, 50) })
+          .update({ title: text.slice(0, 50), updated_at: new Date().toISOString() })
           .eq("id", conversationId);
 
         setConversations((prev) =>
           prev.map((c) => (c.id === conversationId ? { ...c, title: text.slice(0, 50) } : c))
         );
       }
-    } catch (error) {
-      toast({ title: "Error", description: "Failed to get AI response", variant: "destructive" });
+    } catch (error: any) {
+      console.error("Chat error:", error);
+      
+      let errorMessage = "Failed to get AI response. Please try again.";
+      if (error.message?.includes("429")) {
+        errorMessage = "Rate limit exceeded. Please wait a moment and try again.";
+      } else if (error.message?.includes("402")) {
+        errorMessage = "AI credits depleted. Please add credits to continue.";
+      }
+      
+      toast({ title: "Error", description: errorMessage, variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -232,12 +253,12 @@ export default function Chat() {
 
   return (
     <Layout>
-      <div className="flex h-[calc(100vh-80px)] gap-6 animate-fade-in">
+      <div className="flex h-[calc(100vh-80px)] gap-4 lg:gap-6 animate-fade-in">
         {/* Conversations Sidebar */}
-        <Card className="w-80 shrink-0 hidden lg:flex flex-col">
+        <Card className="w-72 lg:w-80 shrink-0 hidden md:flex flex-col">
           <CardHeader className="pb-3 border-b border-border">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg flex items-center gap-2">
+              <CardTitle className="text-base lg:text-lg flex items-center gap-2">
                 <MessageSquare className="h-5 w-5 text-primary" />
                 Conversations
               </CardTitle>
@@ -261,7 +282,7 @@ export default function Chat() {
                 </div>
               ) : (
                 <div className="space-y-1">
-                  {conversations.map((conv, index) => (
+                  {conversations.map((conv) => (
                     <div
                       key={conv.id}
                       className={`group flex items-center gap-2 p-3 rounded-lg cursor-pointer transition-all duration-200 hover:bg-secondary ${
@@ -298,10 +319,10 @@ export default function Chat() {
         </Card>
 
         {/* Chat Area */}
-        <Card className="flex-1 flex flex-col">
+        <Card className="flex-1 flex flex-col min-w-0">
           <CardHeader className="pb-3 border-b border-border shrink-0">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg flex items-center gap-2">
+              <CardTitle className="text-base lg:text-lg flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-primary animate-pulse" />
                 AI Knowledge Assistant
               </CardTitle>
@@ -316,14 +337,13 @@ export default function Chat() {
             {/* Messages */}
             <ScrollArea className="flex-1 p-4">
               {messages.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-center p-6 animate-fade-in">
-                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mb-6 animate-float">
-                    <Bot className="h-10 w-10 text-primary" />
+                <div className="h-full flex flex-col items-center justify-center text-center p-4 lg:p-6 animate-fade-in">
+                  <div className="w-16 lg:w-20 h-16 lg:h-20 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mb-4 lg:mb-6 animate-float">
+                    <Bot className="h-8 lg:h-10 w-8 lg:w-10 text-primary" />
                   </div>
-                  <h3 className="text-xl font-semibold mb-2">How can I help you today?</h3>
-                  <p className="text-muted-foreground mb-6 max-w-md">
-                    Ask me about insurance policies, regulations, claims processing, or any
-                    knowledge base topics.
+                  <h3 className="text-lg lg:text-xl font-semibold mb-2">How can I help you today?</h3>
+                  <p className="text-muted-foreground mb-4 lg:mb-6 max-w-md text-sm lg:text-base">
+                    Ask me about insurance policies, regulations, claims processing, or any knowledge base topics.
                   </p>
                   <div className="flex flex-wrap gap-2 justify-center max-w-lg">
                     {suggestedQuestions.map((q, idx) => (
@@ -348,7 +368,7 @@ export default function Chat() {
                       className={`flex gap-3 animate-fade-in ${
                         msg.role === "user" ? "justify-end" : "justify-start"
                       }`}
-                      style={{ animationDelay: `${index * 100}ms` }}
+                      style={{ animationDelay: `${index * 50}ms` }}
                     >
                       {msg.role === "assistant" && (
                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0">
@@ -356,7 +376,7 @@ export default function Chat() {
                         </div>
                       )}
                       <div
-                        className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                        className={`max-w-[85%] lg:max-w-[75%] rounded-2xl px-4 py-3 ${
                           msg.role === "user"
                             ? "bg-primary text-primary-foreground"
                             : "bg-secondary border border-border"
@@ -388,14 +408,8 @@ export default function Chat() {
                       <div className="bg-secondary border border-border rounded-2xl px-4 py-3">
                         <div className="flex gap-1">
                           <span className="w-2 h-2 bg-primary rounded-full animate-bounce" />
-                          <span
-                            className="w-2 h-2 bg-primary rounded-full animate-bounce"
-                            style={{ animationDelay: "0.2s" }}
-                          />
-                          <span
-                            className="w-2 h-2 bg-primary rounded-full animate-bounce"
-                            style={{ animationDelay: "0.4s" }}
-                          />
+                          <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: "0.2s" }} />
+                          <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: "0.4s" }} />
                         </div>
                       </div>
                     </div>
@@ -406,7 +420,7 @@ export default function Chat() {
             </ScrollArea>
 
             {/* Input */}
-            <div className="p-4 border-t border-border bg-card shrink-0">
+            <div className="p-3 lg:p-4 border-t border-border bg-card shrink-0">
               <div className="flex gap-2">
                 <Input
                   placeholder="Type your message..."
