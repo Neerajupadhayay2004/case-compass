@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CollaboratorPresence } from "@/components/CollaboratorPresence";
 import { supabase } from "@/integrations/supabase/client";
+import { useTheme } from "@/contexts/ThemeContext";
 import { 
   Plus, 
   Search, 
@@ -45,6 +47,8 @@ interface Case {
 }
 
 export default function Cases() {
+  const navigate = useNavigate();
+  const { t } = useTheme();
   const [cases, setCases] = useState<Case[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -380,13 +384,23 @@ export default function Cases() {
                   <p className="text-sm text-muted-foreground line-clamp-2">{caseItem.description}</p>
                   
                   <div className="flex items-center gap-2 pt-2 border-t border-border">
-                    <Button variant="ghost" size="sm" className="flex-1 gap-1">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="flex-1 gap-1"
+                      onClick={() => navigate(`/cases/${caseItem.id}`)}
+                    >
                       <Eye className="h-3 w-3" />
-                      View
+                      {t("view")}
                     </Button>
-                    <Button variant="ghost" size="sm" className="flex-1 gap-1">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="flex-1 gap-1"
+                      onClick={() => navigate(`/cases/${caseItem.id}`)}
+                    >
                       <Edit className="h-3 w-3" />
-                      Edit
+                      {t("edit")}
                     </Button>
                     <Button 
                       variant="ghost" 

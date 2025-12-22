@@ -11,7 +11,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { MobileSidebarTrigger } from "./Sidebar";
 import { NotificationPanel } from "./NotificationPanel";
+import { ThemeSwitcher } from "./ThemeSwitcher";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useNavigate } from "react-router-dom";
 
 interface HeaderProps {
@@ -21,6 +23,7 @@ interface HeaderProps {
 export function Header({ onMobileMenuClick }: HeaderProps) {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const { unreadCount } = useNotifications();
+  const { t } = useTheme();
   const navigate = useNavigate();
 
   return (
@@ -36,12 +39,12 @@ export function Header({ onMobileMenuClick }: HeaderProps) {
             </div>
             <div className="hidden sm:block">
               <h1 className="font-semibold text-lg leading-none">KnowledgeIQ</h1>
-              <p className="text-xs text-muted-foreground">Intelligent Case Assistant</p>
+              <p className="text-xs text-muted-foreground">{t("intelligentAssistant")}</p>
             </div>
           </div>
           <Badge variant="glass" className="hidden md:flex ml-2">
             <span className="w-2 h-2 rounded-full bg-success animate-pulse mr-2" />
-            AI Connected
+            {t("aiConnected")}
           </Badge>
         </div>
 
@@ -49,13 +52,14 @@ export function Header({ onMobileMenuClick }: HeaderProps) {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
-              placeholder="Search knowledge base..." 
+              placeholder={t("searchDocuments")} 
               className="pl-9 bg-secondary/50 border-border focus:border-primary transition-all duration-200"
             />
           </div>
         </div>
 
         <div className="flex items-center gap-2">
+          <ThemeSwitcher />
           <div className="relative">
             <Button 
               variant="ghost" 

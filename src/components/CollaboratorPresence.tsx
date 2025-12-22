@@ -15,9 +15,10 @@ interface Agent {
 
 interface CollaboratorPresenceProps {
   caseId: string;
+  showNames?: boolean;
 }
 
-export function CollaboratorPresence({ caseId }: CollaboratorPresenceProps) {
+export function CollaboratorPresence({ caseId, showNames = false }: CollaboratorPresenceProps) {
   const [activeAgents, setActiveAgents] = useState<Agent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -72,6 +73,42 @@ export function CollaboratorPresence({ caseId }: CollaboratorPresenceProps) {
     return (
       <div className="flex items-center gap-2">
         <div className="w-6 h-6 rounded-full bg-secondary animate-pulse" />
+      </div>
+    );
+  }
+
+  if (showNames) {
+    return (
+      <div className="space-y-2">
+        {activeAgents.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No active collaborators</p>
+        ) : (
+          activeAgents.map((agent) => (
+            <div key={agent.id} className="flex items-center gap-3 p-2 rounded-lg bg-secondary/50">
+              <Avatar className="w-8 h-8">
+                <AvatarFallback
+                  style={{ backgroundColor: agent.avatar_color }}
+                  className="text-white text-xs font-medium"
+                >
+                  {agent.name.split(" ").map((n) => n[0]).join("")}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{agent.name}</p>
+                <p className="text-xs text-muted-foreground truncate">{agent.email}</p>
+              </div>
+              <Circle
+                className={`h-2 w-2 fill-current ${
+                  agent.status === "online"
+                    ? "text-success"
+                    : agent.status === "away"
+                    ? "text-warning"
+                    : "text-muted-foreground"
+                }`}
+              />
+            </div>
+          ))
+        )}
       </div>
     );
   }
