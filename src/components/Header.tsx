@@ -6,7 +6,8 @@ import {
   Bell, 
   Settings, 
   Search,
-  User
+  User,
+  LogOut
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { MobileSidebarTrigger } from "./Sidebar";
@@ -15,6 +16,16 @@ import { ThemeSwitcher } from "./ThemeSwitcher";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 
 interface HeaderProps {
   onMobileMenuClick?: () => void;
@@ -25,6 +36,15 @@ export function Header({ onMobileMenuClick }: HeaderProps) {
   const { unreadCount } = useNotifications();
   const { t } = useTheme();
   const navigate = useNavigate();
+  const { user, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+    toast.success("Signed out successfully");
+    navigate("/auth");
+  };
+
+  const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User";
 
   return (
     <header className="h-16 border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40">
@@ -87,15 +107,34 @@ export function Header({ onMobileMenuClick }: HeaderProps) {
           >
             <Settings className="h-5 w-5" />
           </Button>
-          <div className="flex items-center gap-3 pl-2 sm:pl-4 sm:border-l border-border">
-            <div className="text-right hidden sm:block">
-              <p className="text-sm font-medium">Sarah Johnson</p>
-              <p className="text-xs text-muted-foreground">Claims Specialist</p>
-            </div>
-            <div className="h-9 w-9 rounded-full bg-gradient-to-r from-primary to-accent flex items-center justify-center cursor-pointer hover:scale-105 transition-transform">
-              <User className="h-4 w-4 text-primary-foreground" />
-            </div>
-          </div>
+          
+          {/* User Menu with Logout */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <div className="flex items-center gap-3 pl-2 sm:pl-4 sm:border-l border-border cursor-pointer">
+                <div className="text-right hidden sm:block">
+                  <p className="text-sm font-medium">{displayName}</p>
+                  <p className="text-xs text-muted-foreground">{user?.email}</p>
+                </div>
+                <div className="h-9 w-9 rounded-full bg-gradient-to-r from-primary to-accent flex items-center justify-center hover:scale-105 transition-transform">
+                  <User className="h-4 w-4 text-primary-foreground" />
+                </div>
+              </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate("/settings")}>
+                <Settings className="mr-2 h-4 w-4" />
+                Settings
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign Out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>

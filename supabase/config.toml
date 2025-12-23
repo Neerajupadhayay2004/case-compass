@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.document-search]
 verify_jwt = false
+
+[functions.document-qa]
+verify_jwt = false

@@ -6,7 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
+import { DocumentSearch } from "@/components/DocumentSearch";
+import { DocumentQA } from "@/components/DocumentQA";
 import { 
   Upload, 
   Search, 
@@ -21,7 +24,10 @@ import {
   AlertCircle,
   X,
   Loader2,
-  FolderOpen
+  FolderOpen,
+  Brain,
+  MessageSquare,
+  Library
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -212,9 +218,12 @@ export default function Documents() {
     doc.category.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Get documents for QA component
+  const docsForQA = documents.map(d => ({ id: d.id, title: d.title, file_url: d.file_url }));
+
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="space-y-6 animate-fade-in">
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -331,22 +340,40 @@ export default function Documents() {
           </Dialog>
         </div>
 
-        {/* Search and Filter */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input 
-              placeholder="Search documents..." 
-              className="pl-9"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <Button variant="outline" className="gap-2">
-            <Filter className="h-4 w-4" />
-            Filters
-          </Button>
-        </div>
+        {/* AI Features Tabs */}
+        <Tabs defaultValue="browse" className="w-full">
+          <TabsList className="grid w-full grid-cols-3 mb-6">
+            <TabsTrigger value="browse" className="gap-2">
+              <Library className="h-4 w-4" />
+              Browse
+            </TabsTrigger>
+            <TabsTrigger value="search" className="gap-2">
+              <Brain className="h-4 w-4" />
+              AI Search
+            </TabsTrigger>
+            <TabsTrigger value="qa" className="gap-2">
+              <MessageSquare className="h-4 w-4" />
+              Ask Documents
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="browse" className="space-y-4 animate-fade-in">
+            {/* Search and Filter */}
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  placeholder="Search documents..." 
+                  className="pl-9"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <Button variant="outline" className="gap-2">
+                <Filter className="h-4 w-4" />
+                Filters
+              </Button>
+            </div>
 
         {/* Documents Grid */}
         {isLoading ? (
@@ -432,6 +459,16 @@ export default function Documents() {
             </Button>
           </Card>
         )}
+          </TabsContent>
+
+          <TabsContent value="search" className="animate-fade-in">
+            <DocumentSearch />
+          </TabsContent>
+
+          <TabsContent value="qa" className="animate-fade-in">
+            <DocumentQA documents={docsForQA} />
+          </TabsContent>
+        </Tabs>
       </div>
     </Layout>
   );
