@@ -281,6 +281,54 @@ export type Database = {
         }
         Relationships: []
       }
+      knowledge_articles: {
+        Row: {
+          category: string
+          content: string | null
+          created_at: string
+          document_url: string | null
+          id: string
+          is_featured: boolean | null
+          page_reference: number | null
+          rating: number | null
+          section_reference: string | null
+          subcategory: string | null
+          title: string
+          updated_at: string
+          views: number
+        }
+        Insert: {
+          category?: string
+          content?: string | null
+          created_at?: string
+          document_url?: string | null
+          id?: string
+          is_featured?: boolean | null
+          page_reference?: number | null
+          rating?: number | null
+          section_reference?: string | null
+          subcategory?: string | null
+          title: string
+          updated_at?: string
+          views?: number
+        }
+        Update: {
+          category?: string
+          content?: string | null
+          created_at?: string
+          document_url?: string | null
+          id?: string
+          is_featured?: boolean | null
+          page_reference?: number | null
+          rating?: number | null
+          section_reference?: string | null
+          subcategory?: string | null
+          title?: string
+          updated_at?: string
+          views?: number
+        }
+        Relationships: []
+      }
       knowledge_queries: {
         Row: {
           case_id: string | null
