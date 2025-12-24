@@ -8,7 +8,7 @@ Intelligent Knowledge Retrieval for Complex Case Management
 <img width="1920" height="1080" alt="Screenshot_2025-12-24_20-21-33" src="https://github.com/user-attachments/assets/01d31427-90a5-439f-80ae-aa675239c52f" />
 
 
-🔗 **Live Demo:** [https://appian1.netlify.app/auth](https://appian1.netlify.app/auth)
+🔗 **Live Demo:** [https://appian1.netlify.app/](https://appian1.netlify.app/)
 
 📦 **Repository:** [https://github.com/Neerajupadhayay2004/case-compass](https://github.com/Neerajupadhayay2004/case-compass)
 
