@@ -1,6 +1,6 @@
-# 📌 Case Compass
 
-### Intelligent Knowledge Retrieval for Complex Case Management
+
+![Uploading Screenshot_2025-12-24_20-28-01.png…]()
 
 <img width="1920" height="1080" alt="Screenshot_2025-12-24_20-21-54" src="https://github.com/user-attachments/assets/c25e6560-4670-4324-8cc9-fa69e2007834" />
 <img width="1920" height="1080" alt="Screenshot_2025-12-24_20-17-22" src="https://github.com/user-attachments/assets/f6380f2d-3a72-4af2-9c5b-92bd8da4d2c7" />
